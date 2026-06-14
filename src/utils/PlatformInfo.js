@@ -55,6 +55,10 @@ class PlatformInfo {
             else if (/Web[O0]S|NetCast|LG[ -]Browser/i.test(navigator.userAgent)) {
                 this._platform = 'webos';
             }
+            // Android TV WebView check — the native shell injects LitefinAndroidPlayer.
+            else if (typeof window.LitefinAndroidPlayer !== 'undefined' || /Android.*(TV|AFT|BRAVIA|SHIELD|MiBOX)/i.test(navigator.userAgent)) {
+                this._platform = 'androidtv';
+            }
             // Default
             else {
                 this._platform = 'web';
@@ -96,7 +100,7 @@ class PlatformInfo {
             else if (tizenVer >= 3)
                 chromeVersion = 47; // Tizen 3/4 support Flexbox
             else chromeVersion = 34; // Tizen 2.x
-        } else if (/Tizen|WebO?S|NetCast|LG[ -]?Browser/i.test(navigator.userAgent)) {
+        } else if (/Tizen|WebO?S|NetCast|LG[ -]?Browser|Android/i.test(navigator.userAgent)) {
             // Ancient Tizen (2.4) and WebOS (1.x/2.x) use pure WebKit without Chrome branding
             chromeVersion = 34;
         } else {
@@ -152,11 +156,15 @@ class PlatformInfo {
     }
 
     /** @returns {boolean} True if running in a standard web browser */
+    get isAndroidTV() {
+        return this._platform === 'androidtv';
+    }
+
     get isWeb() {
         return this._platform === 'web';
     }
 
-    /** @returns {string} The raw platform string ('tizen', 'webos', 'web') */
+    /** @returns {string} The raw platform string ('tizen', 'webos', 'androidtv', 'web') */
     get platformString() {
         return this._platform;
     }

@@ -4,7 +4,7 @@
  * Manages video playback using HtmlVideoPlayer, TizenAVPlayer, or WebOSPlayer
  * backend. Handles media source selection, track switching, and playback state.
  *
- * The active backend is exposed through `this._backendType` ('tizen', 'webos', 'html5')
+ * The active backend is exposed through `this._backendType` ('tizen', 'webos', 'android', 'html5')
  * for all platform-specific branching — prefer _backendType string checks over
  * `instanceof` so that adding new backends never requires touching this class.
  *
@@ -15,6 +15,7 @@
 import { HtmlVideoPlayer } from './HtmlVideoPlayer.js';
 import { TizenAVPlayer } from './TizenAVPlayer.js';
 import { WebOSPlayer } from './WebOSPlayer.js';
+import { AndroidMedia3Player } from '../../android/AndroidMedia3Player.js';
 import { platformInfo } from '../../utils/PlatformInfo.js';
 import { MediaHelper } from './MediaHelper.js';
 import { buildJellyfinProfile } from '../../api/DeviceProfile.js';
@@ -228,7 +229,7 @@ export class JellyfinPlayer extends EventEmitter {
      * Initialize the player backend based on platform and settings.
      *
      * Priority order:
-     *   1. Explicit 'playerBackend' setting ('avplay' / 'html5' / 'webos')
+     *   1. Explicit 'playerBackend' setting ('avplay' / 'html5' / 'webos' / 'android')
      *   2. Auto-detect: WebOS platform → WebOSPlayer
      *   3. Auto-detect: Tizen AVPlay API available → TizenAVPlayer
      *   4. Fallback: HtmlVideoPlayer
@@ -246,6 +247,7 @@ export class JellyfinPlayer extends EventEmitter {
             'Initializing backend — useTizenPlayer:', this.useTizenPlayer,
             ' | avplay detected:', hasAvPlay,
             ' | isWebOS:', platformInfo.isWebOS,
+            ' | isAndroidTV:', platformInfo.isAndroidTV,
             ' | setting:', backendSetting
         );
 
@@ -268,6 +270,17 @@ export class JellyfinPlayer extends EventEmitter {
             return;
         }
 
+
+        // ----------------------------------------------------------------
+        // Explicit override: 'android' → use the Media3/ExoPlayer bridge.
+        // ----------------------------------------------------------------
+        if (backendSetting === 'android') {
+            log.info('Using Android TV Media3 backend (forced by setting)');
+            this._backendType = 'android';
+            this._backend    = new AndroidMedia3Player(sharedOptions);
+            return;
+        }
+
         // ----------------------------------------------------------------
         // Explicit override: 'html5' → always use HtmlVideoPlayer
         // ----------------------------------------------------------------
@@ -285,6 +298,17 @@ export class JellyfinPlayer extends EventEmitter {
             log.info('Using WebOS backend (forced by setting)');
             this._backendType = 'webos';
             this._backend    = new WebOSPlayer(sharedOptions);
+            return;
+        }
+
+
+        // ----------------------------------------------------------------
+        // Auto-detect: Android TV native shell → Media3 ExoPlayer backend.
+        // ----------------------------------------------------------------
+        if (platformInfo.isAndroidTV && AndroidMedia3Player.isAvailable()) {
+            log.info('Android TV platform detected — using Media3 backend');
+            this._backendType = 'android';
+            this._backend    = new AndroidMedia3Player(sharedOptions);
             return;
         }
 
@@ -328,7 +352,7 @@ export class JellyfinPlayer extends EventEmitter {
 
     /**
      * Get the current backend type string.
-     * Possible values: 'tizen', 'webos', 'html5'
+     * Possible values: 'tizen', 'webos', 'android', 'html5'
      * @returns {string}
      */
     get backendType() {

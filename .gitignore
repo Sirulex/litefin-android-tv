@@ -45,3 +45,8 @@ knowledge.md
 /.agents
 GEMINI.md
 *.ipk
+
+# Android generated web assets
+android/app/src/main/assets/
+android/app/build/
+android/.gradle/
