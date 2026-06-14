@@ -93,3 +93,15 @@ If Litefin is useful to you, please consider supporting the development:
 ## License
 
 Litefin is subject to the terms of the **Mozilla Public License, v. 2.0**. See the [LICENSE](LICENSE) file for more details.
+
+## Android TV / Media3
+
+Litefin can now be packaged as an Android TV app. The Android shell lives in `android/` and hosts the regular Litefin UI in a WebView while routing playback to a native Media3 ExoPlayer backend.
+
+```bash
+npm run android:sync
+cd android
+./gradlew assembleDebug
+```
+
+The JavaScript side auto-detects the injected `LitefinAndroidPlayer` bridge and selects the Android Media3 backend when running inside the Android TV app.
